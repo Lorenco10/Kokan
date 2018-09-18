@@ -20,8 +20,6 @@
     "storybook": "storybook start -p 7007"
   },
   "dependencies": {
-    "react": "16.3.1",
-    "react-native": "0.55.1",
     "apisauce": "^0.14.2",
     "format-json": "^1.0.3",
     "identity-obj-proxy": "^3.0.0",
@@ -29,7 +27,10 @@
     "prop-types": "^15.6.1",
     "querystringify": "1.0.0",
     "ramda": "^0.25.0",
+    "react": "16.3.1",
+    "react-native": "0.55.1",
     "react-native-config": "^0.10.0",
+    "react-native-vector-icons": "^5.0.0",
     "react-navigation": "^1.5.11",
     "react-navigation-redux-helpers": "^1.0.4",
     "react-redux": "^5.0.6",
@@ -50,6 +51,7 @@
     "babel-preset-react-native": "^3.0.2",
     "enzyme": "^3.2.0",
     "enzyme-adapter-react-16": "^1.1.0",
+    "eslint-config-rallycoding": "^3.2.0",
     "husky": "^0.14.3",
     "ignite-ir-boilerplate-andross": "^2.3.3",
     "jest": "23.6.0",
