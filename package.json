@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "apisauce": "^0.14.2",
+    "axios": "^0.18.0",
     "format-json": "^1.0.3",
     "identity-obj-proxy": "^3.0.0",
     "lodash": "^4.17.4",
@@ -30,6 +31,7 @@
     "react": "16.3.1",
     "react-native": "0.55.1",
     "react-native-config": "^0.10.0",
+    "react-native-text-ticker": "^0.13.0",
     "react-native-vector-icons": "^5.0.0",
     "react-navigation": "^1.5.11",
     "react-navigation-redux-helpers": "^1.0.4",
@@ -78,6 +80,11 @@
       "<rootDir>/Tests/Setup"
     ],
     "preset": "react-native"
+  },
+  "rnpm": {
+    "assets": [
+      "./assets/fonts/"
+    ]
   },
   "config": {}
 }
