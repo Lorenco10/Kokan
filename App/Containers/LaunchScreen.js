@@ -1,146 +1,22 @@
 import React, { Component } from 'react';
-import { Text, View, StatusBar, ScrollView } from 'react-native';
+import {
+  Text,
+  View,
+  StatusBar,
+  ScrollView,
+  TouchableOpacity,
+  TextInput,
+  Keyboard
+} from 'react-native';
 import TextTicker from 'react-native-text-ticker';
 import axios from 'axios';
+import 'intl';
+import 'intl/locale-data/jsonp/en';
+import currencies from './currencies';
 
 // Styles
 import styles from './Styles/LaunchScreenStyles';
-import { Metrics } from '../Themes';
-
-const currencies = [
-  {
-    name: 'US Dollar',
-    acro: 'USD'
-  },
-  {
-    name: 'Pound Sterling',
-    acro: 'GBP'
-  },
-  {
-    name: 'Euro',
-    acro: 'EUR'
-  },
-  {
-    name: 'Japanese Yen',
-    acro: 'JPY'
-  },
-  {
-    name: 'Bulgarian Lev',
-    acro: 'BGN'
-  },
-  {
-    name: 'Czech Koruna',
-    acro: 'CZK'
-  },
-  {
-    name: 'Danish Krone',
-    acro: 'DKK'
-  },
-  {
-    name: 'Hungarian Forint',
-    acro: 'HUF'
-  },
-  {
-    name: 'Polish Zloty',
-    acro: 'PLN'
-  },
-  {
-    name: 'Romanian Leu',
-    acro: 'RON'
-  },
-  {
-    name: '	Swedish Krona',
-    acro: 'SEK'
-  },
-  {
-    name: 'Swiss Franc',
-    acro: 'CHF'
-  },
-  {
-    name: 'Icelandic Krona',
-    acro: 'ISK'
-  },
-  {
-    name: 'Norwegian Krone',
-    acro: 'NOK'
-  },
-  {
-    name: '	Croatian Kunar',
-    acro: 'HRK'
-  },
-  {
-    name: 'Russian Rouble',
-    acro: 'RUB'
-  },
-  {
-    name: 'Turkish Lira',
-    acro: 'TRY'
-  },
-  {
-    name: 'Australian Dollar',
-    acro: 'AUD'
-  },
-  {
-    name: 'Brazilian Real',
-    acro: 'BRL'
-  },
-  {
-    name: 'Canadian Dollar',
-    acro: 'CAD'
-  },
-  {
-    name: 'Chinese yuan Renminbi',
-    acro: 'CNY'
-  },
-  {
-    name: 'Hong Kong Dollar',
-    acro: 'HKD'
-  },
-  {
-    name: 'Indonesian Rupiah',
-    acro: 'IDR'
-  },
-  {
-    name: 'Israeli Shekel',
-    acro: 'ILS'
-  },
-  {
-    name: 'Indian Rupee',
-    acro: 'INR'
-  },
-  {
-    name: 'South Korean Won',
-    acro: 'KRW'
-  },
-  {
-    name: 'Mexican Peso',
-    acro: 'MXN'
-  },
-  {
-    name: 'Malaysian Ringgit',
-    acro: 'MYR'
-  },
-  {
-    name: 'New Zealand Dollar',
-    acro: 'NZD'
-  },
-  {
-    name: 'Philippine Piso',
-    acro: 'PHP'
-  },
-  {
-    name: 'Singapore Dollar',
-    acro: 'SGD'
-  },
-  {
-    name: 'Thai Baht',
-    acro: 'THB'
-  },
-  {
-    name: 'South African Rand',
-    acro: 'ZAR'
-  }
-];
+import { Metrics, Colors } from '../Themes';
 
 export default class LaunchScreen extends Component {
   constructor(props) {
@@ -149,6 +25,10 @@ export default class LaunchScreen extends Component {
     this.state = {
       base: 'EUR',
       target: 'USD',
+      convert: false,
+      text: '',
+      showFeed: true,
+      textLength: 13,
       date: new Date()
         .toJSON()
         .slice(0, 10)
@@ -156,40 +36,187 @@ export default class LaunchScreen extends Component {
       time: new Date().toLocaleTimeString().replace('/.*(d{2}:d{2}:d{2}).*/', '$1'),
       rates: {}
     };
+
+    this.getRates = this.getRates.bind(this);
   }
 
   componentDidMount() {
     axios.get(`https://api.exchangeratesapi.io/latest?base=${this.state.base}`).then(response => {
       this.setState({ rates: response.data.rates });
+      this.tickerRef.startAnimation();
     });
-    this.interval = setInterval(
-      () =>
-        this.setState({
-          time: new Date().toLocaleTimeString().replace('/.*(d{2}:d{2}:d{2}).*/', '$1')
-        }),
-      1000
-    );
+    //this.interval = setInterval(
+    //() =>
+    //this.setState({
+    //time: new Date().toLocaleTimeString().replace('/.*(d{2}:d{2}:d{2}).*/', '$1')
+    //}),
+    //1000
+    //);
   }
 
   componentWillUnmount() {
     clearInterval(this.interval);
   }
 
+  getRates() {
+    axios.get(`https://api.exchangeratesapi.io/latest?base=${this.state.base}`).then(response => {
+      this.setState({ rates: response.data.rates, showFeed: true });
+    });
+  }
+
   render() {
+    const { base, target, rates, convert, text, textLength, showFeed } = this.state;
     return (
       <View style={styles.background}>
         <StatusBar translucent hidden />
         <Text style={styles.titleText}>Kōkan Rates</Text>
-        <TextTicker ref="feed" style={styles.scrollText} duration={60000} loop repeatSpacer={0}>
-          {Object.keys(this.state.rates).map(key => {
-            return `${this.state.base}-${key} ${this.state.rates[key]}  |  `;
-          })}
+        <TextTicker
+          ref={ref => (this.tickerRef = ref)}
+          style={styles.scrollText}
+          duration={100000}
+          marqueeOnMount={false}
+          loop
+          repeatSpacer={0}
+        >
+          {showFeed
+            ? Object.keys(this.state.rates).map(key => {
+                return `${this.state.base}-${key} ${this.state.rates[key]}  |  `;
+              })
+            : ' '}
         </TextTicker>
+        <View
+          style={{
+            height: Metrics.screenHeight * 0.25,
+            width: Metrics.screenWidth,
+            marginTop: Metrics.screenHeight * 0.05,
+            paddingLeft: Metrics.screenWidth * 0.1
+            //backgroundColor: 'black'
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              flexDirection: 'row',
+              justifyContent: 'space-evenly',
+              alignItems: 'center'
+            }}
+          >
+            <Text
+              style={{
+                color: 'white',
+                fontSize: 22,
+                fontFamily: 'SpaceMono-Regular'
+              }}
+            >
+              {this.state.base}
+            </Text>
+            <View
+              style={{
+                height: Metrics.screenHeight * 0.08,
+                width: Metrics.screenWidth * 0.42,
+                backgroundColor: 'white',
+                justifyContent: 'center',
+                alignItems: 'center',
+                elevation: 5,
+                borderRadius: 10
+              }}
+            >
+              <TextInput
+                maxLength={textLength}
+                keyboardType="numeric"
+                placeholder="Enter Value"
+                multiline
+                placeholderTextColor={Colors.steel}
+                underlineColorAndroid="rgba(255,255,255, 0.0)"
+                style={{
+                  height: Metrics.screenHeight * 0.075,
+                  width: Metrics.screenWidth * 0.4,
+                  maxHeight: 80,
+                  color: 'black',
+                  fontSize: text.length <= 9 ? 16 : 14,
+                  fontWeight: '200',
+                  textAlign: 'center',
+                  fontFamily: 'monospace'
+                }}
+                onChangeText={value =>
+                  this.setState({
+                    text: value
+                  })
+                }
+                value={text}
+                onFocus={() => {
+                  this.setState({
+                    convert: false,
+                    textLength: 13,
+                    text: text.replace(/(\d+),(?=\d{3}(\D|$))/g, '$1')
+                  });
+                }}
+                onSubmitEditing={() => {
+                  Keyboard.dismiss();
+                  this.setState({
+                    convert: text !== '',
+                    textLength: 17,
+                    text: text !== '' ? parseFloat(text).toLocaleString('en') : ''
+                  });
+                }}
+              />
+            </View>
+          </View>
+          <View
+            style={{
+              flex: 1,
+              flexDirection: 'row',
+              justifyContent: 'space-evenly',
+              alignItems: 'center'
+            }}
+          >
+            <Text
+              style={{
+                color: 'white',
+                fontSize: 22,
+                fontFamily: 'SpaceMono-Regular'
+              }}
+            >
+              {this.state.target}
+            </Text>
+            <View
+              style={{
+                height: Metrics.screenHeight * 0.08,
+                width: Metrics.screenWidth * 0.42,
+                backgroundColor: 'white',
+                justifyContent: 'center',
+                alignItems: 'center',
+                elevation: 5,
+                borderRadius: 10
+              }}
+            >
+              <Text
+                style={{
+                  color: Colors.panther,
+                  paddingLeft: 10,
+                  paddingRight: 10,
+                  fontSize: text.length <= 12 ? 16 : 14,
+                  fontWeight: '200',
+                  fontFamily: 'monospace'
+                }}
+              >
+                {convert
+                  ? (
+                      Math.round(
+                        rates[target] * Number(text.replace(/(\d+),(?=\d{3}(\D|$))/g, '$1')) * 100
+                      ) / 100
+                    ).toLocaleString('en')
+                  : '...'}
+              </Text>
+            </View>
+          </View>
+        </View>
         <ScrollView
+          overScrollMode="never"
           style={{
             height: Metrics.screenHeight * 0.2,
             width: Metrics.screenWidth,
-            marginTop: Metrics.screenHeight * 0.3
+            marginTop: Metrics.screenHeight * 0.1
           }}
         >
           <View
@@ -205,33 +232,55 @@ export default class LaunchScreen extends Component {
           >
             {currencies.map((prop, index) => {
               return index <= 3 ? (
-                <Text
+                <TouchableOpacity
                   style={{
-                    color: '#00FF7B',
-                    fontSize: 18,
-                    fontFamily: 'SpaceMono-Regular',
-                    paddingBottom: 15,
-                    paddingTop: 5,
-                    paddingLeft: 20,
-                    paddingRight: 20
+                    height: Metrics.screenHeight * 0.07,
+                    width: Metrics.screenWidth * 0.2,
+                    borderRadius: Metrics.screenHeight * 0.08,
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                  onPress={() => {
+                    this.setState({ base: prop.acro, showFeed: false }, () => {
+                      this.getRates();
+                    });
                   }}
                 >
-                  {prop.acro}
-                </Text>
+                  <Text
+                    style={{
+                      color: '#00FF7B',
+                      fontSize: 18,
+                      fontFamily: 'SpaceMono-Regular'
+                    }}
+                  >
+                    {prop.acro}
+                  </Text>
+                </TouchableOpacity>
               ) : (
-                <Text
+                <TouchableOpacity
                   style={{
-                    color: 'white',
-                    fontSize: 18,
-                    fontFamily: 'SpaceMono-Regular',
-                    paddingBottom: 15,
-                    paddingTop: 5,
-                    paddingLeft: 20,
-                    paddingRight: 20
+                    height: Metrics.screenHeight * 0.07,
+                    width: Metrics.screenWidth * 0.2,
+                    borderRadius: Metrics.screenHeight * 0.08,
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                  }}
+                  onPress={() => {
+                    this.setState({ base: prop.acro, showFeed: false }, () => {
+                      this.getRates();
+                    });
                   }}
                 >
-                  {prop.acro}
-                </Text>
+                  <Text
+                    style={{
+                      color: 'white',
+                      fontSize: 18,
+                      fontFamily: 'SpaceMono-Regular'
+                    }}
+                  >
+                    {prop.acro}
+                  </Text>
+                </TouchableOpacity>
               );
             })}
           </View>
