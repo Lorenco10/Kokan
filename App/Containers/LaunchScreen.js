@@ -8,31 +8,31 @@ import {
   TextInput,
   Keyboard,
   Animated,
-  Easing
+  Easing,
+  NativeModules
 } from 'react-native';
 import TextTicker from 'react-native-text-ticker';
 import axios from 'axios';
 import 'intl';
 import 'intl/locale-data/jsonp/en';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import currencies from './currencies';
 
 // Styles
 import styles from './Styles/LaunchScreenStyles';
 import { Metrics, Colors } from '../Themes';
 
 const AnimatedIcon = Animated.createAnimatedComponent(Icon);
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 export default class LaunchScreen extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      base: 'EUR',
-      target: 'USD',
+      base: 'eur',
+      target: 'usd',
       convert: false,
       text: '',
+      gridRates: {},
       openMenu: false,
       active: 'base',
       showFeed: true,
@@ -50,28 +50,36 @@ export default class LaunchScreen extends Component {
     this.onChange = this.onChange.bind(this);
     this.animate = this.animate.bind(this);
     this.animateMenu = this.animateMenu.bind(this);
+    this.keyboardDidHide = this.keyboardDidHide.bind(this);
 
     this.activeAnim = new Animated.Value(0);
     this.menuAnim = new Animated.Value(0);
   }
 
   componentDidMount() {
-    axios.get(`https://api.exchangeratesapi.io/latest?base=${this.state.base}`).then(response => {
-      this.setState({ rates: response.data.rates, feedRates: response.data.rates });
+    axios.get(`http://www.floatrates.com/daily/${this.state.base}.json`).then(response => {
+      console.log(response.data);
+      this.setState({ rates: response.data, feedRates: response.data });
       this.tickerRef.startAnimation();
     });
-    //this.interval = setInterval(
-    //() =>
-    //this.setState({
-    //time: new Date().toLocaleTimeString().replace('/.*(d{2}:d{2}:d{2}).*/', '$1')
-    //}),
-    //1000
-    //);
+    axios.get('http://www.floatrates.com/daily/cve.json').then(response => {
+      this.setState({ gridRates: response.data });
+      console.log(response.data);
+    });
+    this.interval = setInterval(
+      () =>
+        this.setState({
+          time: new Date().toLocaleTimeString().replace('/.*(d{2}:d{2}:d{2}).*/', '$1')
+        }),
+      1000
+    );
+    this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this.keyboardDidHide);
   }
 
-  /*   componentWillUnmount() {
+  componentWillUnmount() {
     clearInterval(this.interval);
-  } */
+    this.keyboardDidHideListener.remove();
+  }
 
   onChange(value) {
     this.textInput.setNativeProps({ text: value });
@@ -79,9 +87,13 @@ export default class LaunchScreen extends Component {
   }
 
   getRates() {
-    axios.get(`https://api.exchangeratesapi.io/latest?base=${this.state.base}`).then(response => {
-      this.setState({ rates: response.data.rates, convert: true });
+    axios.get(`http://www.floatrates.com/daily/${this.state.base}.json`).then(response => {
+      this.setState({ rates: response.data, convert: true });
     });
+  }
+
+  keyboardDidHide() {
+    NativeModules.NavigationBarAndroid.hide();
   }
 
   animate(move) {
@@ -122,28 +134,18 @@ export default class LaunchScreen extends Component {
       extrapolate: 'clamp'
     });
 
-    const drop = this.menuAnim.interpolate({
+    /*     const drop = this.menuAnim.interpolate({
       inputRange: [0, 1],
       outputRange: ['0deg', '180deg'],
       extrapolate: 'clamp'
-    });
+    }); */
 
     return (
       <View style={styles.background}>
         <StatusBar translucent hidden />
         <TouchableOpacity
           activeOpacity={1}
-          style={{
-            height: Metrics.screenHeight * 0.06,
-            width: Metrics.screenHeight * 0.06,
-            borderRadius: Metrics.screenHeight * 0.15,
-            position: 'absolute',
-            //backgroundColor: 'white',
-            top: Metrics.screenHeight * 0.02,
-            right: Metrics.screenHeight * 0.02,
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
+          style={styles.menuBox}
           onPress={() => {
             this.animateMenu(!this.state.openMenu);
           }}
@@ -168,23 +170,16 @@ export default class LaunchScreen extends Component {
           name="rhombus"
           size={20}
           color="#00FF7B"
-          style={{
-            position: 'absolute',
-            left: Metrics.screenWidth * 0.1,
-            transform: [{ translateY }]
-          }}
+          style={[
+            styles.greenIcon,
+            {
+              transform: [{ translateY }]
+            }
+          ]}
         />
         <TouchableOpacity
-          style={{
-            height: Metrics.screenHeight * 0.04,
-            width: Metrics.screenWidth * 0.15,
-            borderRadius: Metrics.screenWidth * 0.08,
-            position: 'absolute',
-            top: Metrics.screenHeight * 0.32,
-            left: Metrics.screenHeight * 0.135,
-            justifyContent: 'center',
-            alignItems: 'center'
-          }}
+          activeOpacity={0.5}
+          style={styles.switchBox}
           onPress={() => {
             this.setState({ base: target, target: base, convert: false }, () => {
               this.getRates();
@@ -196,66 +191,31 @@ export default class LaunchScreen extends Component {
         <TextTicker
           ref={ref => (this.tickerRef = ref)}
           style={styles.scrollText}
-          duration={100000}
+          duration={300000}
           marqueeOnMount={false}
           loop
           repeatSpacer={0}
         >
           {showFeed
             ? Object.keys(this.state.feedRates).map(key => {
-                return `${'EUR'}-${key} ${this.state.feedRates[key]}  |  `;
+                return `${'EUR'}-${key.toUpperCase()} ${parseFloat(
+                  this.state.feedRates[key].rate
+                ).toFixed(4)}  |  `;
               })
             : ' '}
         </TextTicker>
-        <View
-          style={{
-            height: Metrics.screenHeight * 0.25,
-            width: Metrics.screenWidth,
-            marginTop: Metrics.screenHeight * 0.05,
-            paddingLeft: Metrics.screenWidth * 0.1
-            //backgroundColor: 'black'
-          }}
-        >
-          <View
-            style={{
-              flex: 1,
-              flexDirection: 'row',
-              justifyContent: 'space-evenly',
-              alignItems: 'center'
-            }}
-          >
+        <View style={styles.conversionBox}>
+          <View style={styles.baseBox}>
             <TouchableOpacity
-              style={{
-                height: Metrics.screenHeight * 0.08,
-                width: Metrics.screenWidth * 0.12,
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
+              activeOpacity={0.5}
+              style={styles.baseTextBox}
               onPress={() => {
                 this.animate(false);
               }}
             >
-              <Text
-                style={{
-                  color: 'white',
-                  fontSize: 22,
-                  fontFamily: 'SpaceMono-Regular'
-                }}
-              >
-                {this.state.base}
-              </Text>
+              <Text style={styles.baseText}>{this.state.base.toUpperCase()}</Text>
             </TouchableOpacity>
-            <View
-              style={{
-                height: Metrics.screenHeight * 0.08,
-                width: Metrics.screenWidth * 0.42,
-                backgroundColor: 'white',
-                justifyContent: 'center',
-                alignItems: 'center',
-                elevation: 5,
-                borderRadius: 10
-              }}
-            >
+            <View style={styles.baseInputBox}>
               <TextInput
                 ref={component => (this.textInput = component)}
                 maxLength={textLength}
@@ -264,16 +224,12 @@ export default class LaunchScreen extends Component {
                 multiline
                 placeholderTextColor={Colors.steel}
                 underlineColorAndroid="rgba(255,255,255, 0.0)"
-                style={{
-                  height: Metrics.screenHeight * 0.075,
-                  width: Metrics.screenWidth * 0.4,
-                  maxHeight: 80,
-                  color: 'black',
-                  fontSize: text.length <= 9 ? 16 : 14,
-                  fontWeight: '200',
-                  textAlign: 'center',
-                  fontFamily: 'monospace'
-                }}
+                style={[
+                  styles.baseInput,
+                  {
+                    fontSize: text.length <= 9 ? 16 : 14
+                  }
+                ]}
                 onChangeText={value => this.onChange(value)}
                 onFocus={() => {
                   this.setState(
@@ -303,60 +259,31 @@ export default class LaunchScreen extends Component {
               />
             </View>
           </View>
-          <View
-            style={{
-              flex: 1,
-              flexDirection: 'row',
-              justifyContent: 'space-evenly',
-              alignItems: 'center'
-            }}
-          >
+          <View style={styles.targetBox}>
             <TouchableOpacity
-              style={{
-                height: Metrics.screenHeight * 0.08,
-                width: Metrics.screenWidth * 0.12,
-                justifyContent: 'center',
-                alignItems: 'center'
-              }}
+              activeOpacity={0.5}
+              style={styles.targetTextBox}
               onPress={() => {
                 this.animate(true);
               }}
             >
-              <Text
-                style={{
-                  color: 'white',
-                  fontSize: 22,
-                  fontFamily: 'SpaceMono-Regular'
-                }}
-              >
-                {this.state.target}
-              </Text>
+              <Text style={styles.targetText}>{this.state.target.toUpperCase()}</Text>
             </TouchableOpacity>
-            <View
-              style={{
-                height: Metrics.screenHeight * 0.08,
-                width: Metrics.screenWidth * 0.42,
-                backgroundColor: 'white',
-                justifyContent: 'center',
-                alignItems: 'center',
-                elevation: 5,
-                borderRadius: 10
-              }}
-            >
+            <View style={styles.targetResultBox}>
               <Text
-                style={{
-                  color: Colors.panther,
-                  paddingLeft: 10,
-                  paddingRight: 10,
-                  fontSize: text.length <= 12 ? 16 : 14,
-                  fontWeight: '200',
-                  fontFamily: 'monospace'
-                }}
+                style={[
+                  styles.targetResult,
+                  {
+                    fontSize: text.length <= 12 ? 16 : 14
+                  }
+                ]}
               >
                 {convert
                   ? (
                       Math.round(
-                        rates[target] * Number(text.replace(/(\d+),(?=\d{3}(\D|$))/g, '$1')) * 100
+                        rates[target].rate *
+                          Number(text.replace(/(\d+),(?=\d{3}(\D|$))/g, '$1')) *
+                          100
                       ) / 100
                     ).toLocaleString('en')
                   : '...'}
@@ -364,74 +291,48 @@ export default class LaunchScreen extends Component {
             </View>
           </View>
         </View>
-        <ScrollView
-          overScrollMode="never"
-          style={{
-            height: Metrics.screenHeight * 0.2,
-            width: Metrics.screenWidth,
-            marginTop: Metrics.screenHeight * 0.1
+        <TouchableOpacity
+          activeOpacity={0.5}
+          style={styles.convertBox}
+          onPress={() => {
+            this.getRates();
           }}
         >
-          <View
-            style={{
-              flex: 1,
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingLeft: 30,
-              paddingRight: 30
-            }}
-          >
-            {currencies.map((prop, index) => {
+          <Text style={styles.convertText}>Get</Text>
+        </TouchableOpacity>
+        <ScrollView overScrollMode="never" style={styles.currBox}>
+          <View style={styles.currContainer}>
+            {Object.keys(this.state.gridRates).map((key, index) => {
+              console.log(key);
               return index <= 3 ? (
                 <TouchableOpacity
-                  style={{
-                    height: Metrics.screenHeight * 0.07,
-                    width: Metrics.screenWidth * 0.2,
-                    borderRadius: Metrics.screenHeight * 0.08,
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  activeOpacity={0.5}
+                  style={styles.currTextBox}
                   onPress={() => {
-                    this.setState({ [`${activeCurrency}`]: prop.acro, convert: false }, () => {
-                      this.getRates();
-                    });
+                    this.setState({ [`${activeCurrency}`]: key, convert: false });
                   }}
                 >
-                  <Text
-                    style={{
-                      color: '#00FF7B',
-                      fontSize: 18,
-                      fontFamily: 'SpaceMono-Regular'
-                    }}
-                  >
-                    {prop.acro}
-                  </Text>
+                  <Text style={styles.currText}>{key.toUpperCase()}</Text>
                 </TouchableOpacity>
               ) : (
                 <TouchableOpacity
-                  style={{
-                    height: Metrics.screenHeight * 0.07,
-                    width: Metrics.screenWidth * 0.2,
-                    borderRadius: Metrics.screenHeight * 0.08,
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                  }}
+                  activeOpacity={0.5}
+                  style={styles.currTextBox}
                   onPress={() => {
-                    this.setState({ [`${activeCurrency}`]: prop.acro, convert: false }, () => {
-                      this.getRates();
+                    this.setState({ [`${activeCurrency}`]: key, convert: false }, () => {
+                      // this.getRates();
                     });
                   }}
                 >
                   <Text
-                    style={{
-                      color: 'white',
-                      fontSize: 18,
-                      fontFamily: 'SpaceMono-Regular'
-                    }}
+                    style={[
+                      styles.currText,
+                      {
+                        color: 'white'
+                      }
+                    ]}
                   >
-                    {prop.acro}
+                    {key.toUpperCase()}
                   </Text>
                 </TouchableOpacity>
               );

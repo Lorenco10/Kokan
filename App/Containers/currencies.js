@@ -1,135 +1,139 @@
 const currencies = [
   {
     name: 'US Dollar',
-    acro: 'USD'
+    acro: 'usd'
   },
   {
     name: 'Pound Sterling',
-    acro: 'GBP'
+    acro: 'gbp'
   },
   {
     name: 'Euro',
-    acro: 'EUR'
+    acro: 'eur'
   },
   {
     name: 'Japanese Yen',
-    acro: 'JPY'
+    acro: 'jpy'
+  },
+  {
+    name: 'Albanian Lek',
+    acro: 'all'
   },
   {
     name: 'Bulgarian Lev',
-    acro: 'BGN'
+    acro: 'bgn'
   },
   {
     name: 'Czech Koruna',
-    acro: 'CZK'
+    acro: 'czk'
   },
   {
     name: 'Danish Krone',
-    acro: 'DKK'
+    acro: 'dkk'
   },
   {
     name: 'Hungarian Forint',
-    acro: 'HUF'
+    acro: 'huf'
   },
   {
     name: 'Polish Zloty',
-    acro: 'PLN'
+    acro: 'pln'
   },
   {
     name: 'Romanian Leu',
-    acro: 'RON'
+    acro: 'ron'
   },
   {
     name: '	Swedish Krona',
-    acro: 'SEK'
+    acro: 'sek'
   },
   {
     name: 'Swiss Franc',
-    acro: 'CHF'
+    acro: 'chf'
   },
   {
     name: 'Icelandic Krona',
-    acro: 'ISK'
+    acro: 'isk'
   },
   {
     name: 'Norwegian Krone',
-    acro: 'NOK'
+    acro: 'nok'
   },
   {
     name: '	Croatian Kunar',
-    acro: 'HRK'
+    acro: 'hrk'
   },
   {
     name: 'Russian Rouble',
-    acro: 'RUB'
+    acro: 'rub'
   },
   {
     name: 'Turkish Lira',
-    acro: 'TRY'
+    acro: 'try'
   },
   {
     name: 'Australian Dollar',
-    acro: 'AUD'
+    acro: 'aud'
   },
   {
     name: 'Brazilian Real',
-    acro: 'BRL'
+    acro: 'brl'
   },
   {
     name: 'Canadian Dollar',
-    acro: 'CAD'
+    acro: 'cad'
   },
   {
     name: 'Chinese yuan Renminbi',
-    acro: 'CNY'
+    acro: 'cny'
   },
   {
     name: 'Hong Kong Dollar',
-    acro: 'HKD'
+    acro: 'hkd'
   },
   {
     name: 'Indonesian Rupiah',
-    acro: 'IDR'
+    acro: 'idr'
   },
   {
     name: 'Israeli Shekel',
-    acro: 'ILS'
+    acro: 'ils'
   },
   {
     name: 'Indian Rupee',
-    acro: 'INR'
+    acro: 'inr'
   },
   {
     name: 'South Korean Won',
-    acro: 'KRW'
+    acro: 'krw'
   },
   {
     name: 'Mexican Peso',
-    acro: 'MXN'
+    acro: 'mxn'
   },
   {
     name: 'Malaysian Ringgit',
-    acro: 'MYR'
+    acro: 'myr'
   },
   {
     name: 'New Zealand Dollar',
-    acro: 'NZD'
+    acro: 'nzd'
   },
   {
     name: 'Philippine Piso',
-    acro: 'PHP'
+    acro: 'php'
   },
   {
     name: 'Singapore Dollar',
-    acro: 'SGD'
+    acro: 'sgd'
   },
   {
     name: 'Thai Baht',
-    acro: 'THB'
+    acro: 'thb'
   },
   {
     name: 'South African Rand',
-    acro: 'ZAR'
+    acro: 'zar'
   }
 ];
 
