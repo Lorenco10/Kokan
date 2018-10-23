@@ -45,13 +45,12 @@ export default StyleSheet.create({
     justifyContent: 'flex-end'
   },
   menuBox: {
-    height: Metrics.screenHeight * 0.06,
-    width: Metrics.screenHeight * 0.06,
-    borderRadius: Metrics.screenHeight * 0.15,
+    height: Metrics.screenHeight * 0.07,
+    width: Metrics.screenHeight * 0.07,
+    borderRadius: Metrics.screenHeight * 0.01,
     position: 'absolute',
-    //backgroundColor: 'white',
-    top: Metrics.screenHeight * 0.02,
-    right: Metrics.screenHeight * 0.02,
+    top: Metrics.screenHeight * 0.01,
+    right: Metrics.screenHeight * 0.06,
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -143,35 +142,15 @@ export default StyleSheet.create({
     fontWeight: '200',
     fontFamily: 'monospace'
   },
-  convertBox: {
-    position: 'absolute',
-    height: Metrics.screenHeight * 0.05,
-    width: Metrics.screenWidth * 0.2,
-    top: Metrics.screenHeight * 0.48,
-    left: Metrics.screenWidth * 0.57,
-    backgroundColor: 'white',
-    borderRadius: Metrics.screenHeight * 0.05,
-    justifyContent: 'center',
-    alignItems: 'center'
-  },
-  convertText: {
-    color: 'black',
-    fontSize: 15,
-    fontFamily: 'SpaceMono-Regular'
-  },
   currBox: {
-    height: Metrics.screenHeight * 0.2,
-    width: Metrics.screenWidth,
-    marginTop: Metrics.screenHeight * 0.1
+    height: Metrics.screenHeight * 0.12,
+    width: Metrics.screenWidth * 0.9,
+    marginTop: Metrics.screenHeight * 0.05
   },
   currContainer: {
     flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingLeft: 30,
-    paddingRight: 30
+    justifyContent: 'center'
   },
   currTextBox: {
     height: Metrics.screenHeight * 0.07,
@@ -184,5 +163,29 @@ export default StyleSheet.create({
     color: '#00FF7B',
     fontSize: 18,
     fontFamily: 'SpaceMono-Regular'
+  },
+  textInput: {
+    height: '190%',
+    width: '80%',
+    color: Colors.panther,
+    fontSize: 13,
+    fontWeight: '300',
+    textAlign: 'center',
+    letterSpacing: 0.5,
+    fontFamily: 'SpaceMono-Regular',
+    paddingBottom: 0,
+    paddingTop: 0
+  },
+  searchButton: {
+    height: '5%',
+    width: '81%',
+    borderRadius: 20,
+    flexDirection: 'row',
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    top: '83%',
+    left: '10%',
+    backgroundColor: 'white'
   }
 });

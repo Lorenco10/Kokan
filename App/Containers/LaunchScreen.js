@@ -3,7 +3,8 @@ import {
   Text,
   View,
   StatusBar,
-  ScrollView,
+  //ScrollView,
+  FlatList,
   TouchableOpacity,
   TextInput,
   Keyboard,
@@ -28,13 +29,19 @@ export default class LaunchScreen extends Component {
     super(props);
 
     this.state = {
-      base: 'eur',
-      target: 'usd',
+      base: 'EUR',
+      target: 'USD',
+      expanded: true,
+      text2: '',
       convert: false,
       text: '',
-      gridRates: {},
+      rotateDone: true,
+      iconName: 'view-grid',
+      gridRates: [],
+      gridRates2: [],
       openMenu: false,
       active: 'base',
+      list: false,
       showFeed: true,
       textLength: 13,
       date: new Date()
@@ -42,37 +49,41 @@ export default class LaunchScreen extends Component {
         .slice(0, 10)
         .replace(/-/g, '-'),
       time: new Date().toLocaleTimeString().replace('/.*(d{2}:d{2}:d{2}).*/', '$1'),
-      rates: {},
-      feedRates: {}
+      rates: [],
+      feedRates: []
     };
 
     this.getRates = this.getRates.bind(this);
     this.onChange = this.onChange.bind(this);
+    this.onChangeS = this.onChangeS.bind(this);
     this.animate = this.animate.bind(this);
     this.animateMenu = this.animateMenu.bind(this);
     this.keyboardDidHide = this.keyboardDidHide.bind(this);
+    this.renderItem = this.renderItem.bind(this);
+    this.keyExtractor = this.keyExtractor.bind(this);
+    this.searchCurrencies = this.searchCurrencies.bind(this);
 
     this.activeAnim = new Animated.Value(0);
     this.menuAnim = new Animated.Value(0);
   }
 
   componentDidMount() {
-    axios.get(`http://www.floatrates.com/daily/${this.state.base}.json`).then(response => {
-      console.log(response.data);
-      this.setState({ rates: response.data, feedRates: response.data });
-      this.tickerRef.startAnimation();
-    });
-    axios.get('http://www.floatrates.com/daily/cve.json').then(response => {
-      this.setState({ gridRates: response.data });
-      console.log(response.data);
-    });
-    this.interval = setInterval(
-      () =>
-        this.setState({
-          time: new Date().toLocaleTimeString().replace('/.*(d{2}:d{2}:d{2}).*/', '$1')
-        }),
-      1000
-    );
+    axios
+      .all([
+        axios.get(`http://www.floatrates.com/daily/${this.state.base}.json`),
+        axios.get('http://www.floatrates.com/daily/cve.json')
+      ])
+      .then(
+        axios.spread((response1, response2) => {
+          this.setState({
+            rates: Object.values(response1.data),
+            feedRates: Object.values(response1.data),
+            gridRates: Object.values(response2.data),
+            gridRates2: Object.values(response2.data)
+          });
+          this.tickerRef.startAnimation();
+        })
+      );
     this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this.keyboardDidHide);
   }
 
@@ -86,10 +97,26 @@ export default class LaunchScreen extends Component {
     this.setState({ text: value });
   }
 
+  onChangeS(value) {
+    this.textInput.setNativeProps({ text2: value });
+    this.setState({ text2: value });
+  }
+
   getRates() {
+    const obj = [{ code: this.state[this.state.active], rate: 1 }];
     axios.get(`http://www.floatrates.com/daily/${this.state.base}.json`).then(response => {
-      this.setState({ rates: response.data, convert: true });
+      const rates = Object.values(response.data);
+      Array.prototype.push.apply(rates, obj);
+      this.setState({ rates, convert: true });
     });
+  }
+
+  searchCurrencies() {
+    const { gridRates, text2 } = this.state;
+    const result = gridRates.filter(
+      prop => prop.name.includes(text2) || prop.code.includes(text2.toUpperCase())
+    );
+    this.setState({ gridRates: result });
   }
 
   keyboardDidHide() {
@@ -114,13 +141,100 @@ export default class LaunchScreen extends Component {
       easing: Easing.out(Easing.back(0.01)),
       useNativeDriver: true
     }).start(() => {
-      this.setState({ openMenu: !this.state.openMenu });
+      this.setState({ openMenu: !this.state.openMenu, list: !this.state.list, rotateDone: true });
     });
+  }
+
+  keyExtractor(item) {
+    return item.code;
+  }
+
+  renderItem(item) {
+    return (
+      <View style={styles.currContainer}>
+        {item.index <= 3 ? (
+          <TouchableOpacity
+            activeOpacity={0.5}
+            style={[
+              styles.currTextBox,
+              this.state.list
+                ? {
+                    height: Metrics.screenHeight * 0.07,
+                    width: Metrics.screenWidth * 0.9,
+                    borderRadius: 0
+                  }
+                : null
+            ]}
+            onPress={() => {
+              this.setState({ [`${this.state.active}`]: item.item.code, convert: false }, () => {
+                this.getRates();
+              });
+            }}
+          >
+            {this.state.list ? (
+              <View
+                style={{
+                  height: Metrics.screenHeight * 0.07,
+                  width: Metrics.screenWidth * 0.9,
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  flexDirection: 'row'
+                }}
+              >
+                <Text style={styles.currText}>{item.item.name}</Text>
+                <Text style={styles.currText}>{item.item.code}</Text>
+              </View>
+            ) : (
+              <Text style={styles.currText}>{item.item.code}</Text>
+            )}
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            activeOpacity={0.5}
+            style={[
+              styles.currTextBox,
+              this.state.list
+                ? {
+                    height: Metrics.screenHeight * 0.07,
+                    width: Metrics.screenWidth * 0.9,
+                    borderRadius: 0
+                  }
+                : null
+            ]}
+            onPress={() => {
+              this.setState({ [`${this.state.active}`]: item.item.code, convert: false }, () => {
+                this.getRates();
+              });
+            }}
+          >
+            {this.state.list ? (
+              <View
+                style={{
+                  height: Metrics.screenHeight * 0.07,
+                  width: Metrics.screenWidth * 0.9,
+                  alignItems: 'flex-start',
+                  justifyContent: 'space-between',
+                  flexDirection: 'row'
+                }}
+              >
+                <Text style={[styles.currText, { color: 'white' }]}>
+                  {item.item.name === 'Bosnia and Herzegovina convertible mark'
+                    ? 'Bosnia and Herzegovina'
+                    : item.item.name}
+                </Text>
+                <Text style={[styles.currText, { color: 'white' }]}>{item.item.code}</Text>
+              </View>
+            ) : (
+              <Text style={[styles.currText, { color: 'white' }]}>{item.item.code}</Text>
+            )}
+          </TouchableOpacity>
+        )}
+      </View>
+    );
   }
 
   render() {
     const { base, target, rates, convert, text, textLength, showFeed } = this.state;
-    const activeCurrency = this.state.active;
 
     const translateY = this.activeAnim.interpolate({
       inputRange: [0, 1],
@@ -130,7 +244,7 @@ export default class LaunchScreen extends Component {
 
     const flip = this.menuAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: ['0deg', '180deg'],
+      outputRange: ['90deg', '0deg'],
       extrapolate: 'clamp'
     });
 
@@ -142,29 +256,36 @@ export default class LaunchScreen extends Component {
 
     return (
       <View style={styles.background}>
-        <StatusBar translucent hidden />
+        <StatusBar hidden />
         <TouchableOpacity
           activeOpacity={1}
           style={styles.menuBox}
-          onPress={() => {
-            this.animateMenu(!this.state.openMenu);
-          }}
+          onPress={
+            this.state.rotateDone
+              ? () => {
+                  this.animateMenu(!this.state.openMenu);
+                  this.setState({
+                    iconName: this.state.iconName === 'view-grid' ? 'view-stream' : 'view-grid',
+                    rotateDone: false
+                  });
+                }
+              : null
+          }
         >
           <AnimatedIcon
-            name="menu-down"
-            size={40}
-            color="red"
+            name={this.state.iconName}
+            size={25}
+            color="white"
             style={{ elevation: 5, transform: [{ rotate: flip }] }}
           />
         </TouchableOpacity>
-        {/* <View
-          style={{
-            height: Metrics.screenHeight * 0.2,
-            width: Metrics.screenWidth,
-            backgroundColor: '#282828',
-            top: +Metrics.screenHeight * 0.4
-          }}
-        /> */}
+        <TouchableOpacity
+          activeOpacity={1}
+          style={[styles.menuBox, { right: 0 }]}
+          onPress={() => {}}
+        >
+          <AnimatedIcon name="settings" size={25} color="white" style={{ elevation: 5 }} />
+        </TouchableOpacity>
         <Text style={styles.titleText}>Kōkan Rates</Text>
         <AnimatedIcon
           name="rhombus"
@@ -197,10 +318,8 @@ export default class LaunchScreen extends Component {
           repeatSpacer={0}
         >
           {showFeed
-            ? Object.keys(this.state.feedRates).map(key => {
-                return `${'EUR'}-${key.toUpperCase()} ${parseFloat(
-                  this.state.feedRates[key].rate
-                ).toFixed(4)}  |  `;
+            ? this.state.feedRates.map(prop => {
+                return `${'EUR'}-${prop.code} ${parseFloat(prop.rate).toFixed(4)}  |  `;
               })
             : ' '}
         </TextTicker>
@@ -213,7 +332,7 @@ export default class LaunchScreen extends Component {
                 this.animate(false);
               }}
             >
-              <Text style={styles.baseText}>{this.state.base.toUpperCase()}</Text>
+              <Text style={styles.baseText}>{this.state.base}</Text>
             </TouchableOpacity>
             <View style={styles.baseInputBox}>
               <TextInput
@@ -267,7 +386,7 @@ export default class LaunchScreen extends Component {
                 this.animate(true);
               }}
             >
-              <Text style={styles.targetText}>{this.state.target.toUpperCase()}</Text>
+              <Text style={styles.targetText}>{this.state.target}</Text>
             </TouchableOpacity>
             <View style={styles.targetResultBox}>
               <Text
@@ -280,68 +399,50 @@ export default class LaunchScreen extends Component {
               >
                 {convert
                   ? (
-                      Math.round(
-                        rates[target].rate *
-                          Number(text.replace(/(\d+),(?=\d{3}(\D|$))/g, '$1')) *
-                          100
-                      ) / 100
-                    ).toLocaleString('en')
+                      rates[rates.findIndex(x => x.code === this.state.target)].rate *
+                      Number(text.replace(/(\d+),(?=\d{3}(\D|$))/g, '$1'))
+                    ).toLocaleString('en', { minimumFractionDigits: 5 })
                   : '...'}
               </Text>
             </View>
           </View>
         </View>
-        <TouchableOpacity
-          activeOpacity={0.5}
-          style={styles.convertBox}
-          onPress={() => {
-            this.getRates();
-          }}
+        <FlatList
+          data={this.state.gridRates}
+          extraData={this.state.gridRates}
+          renderItem={this.renderItem}
+          keyExtractor={this.keyExtractor}
+          key={this.state.list}
+          numColumns={this.state.list ? 1 : 5}
+          overScrollMode="never"
+          indicatorStyle="white"
+          initialNumToRender={25}
+          style={styles.currBox}
+        />
+        <View
+          style={[
+            styles.searchButton,
+            { width: this.state.list ? '92%' : '82%', left: this.state.list ? '4%' : '9%' }
+          ]}
+          activeOpacity={1}
         >
-          <Text style={styles.convertText}>Get</Text>
-        </TouchableOpacity>
-        <ScrollView overScrollMode="never" style={styles.currBox}>
-          <View style={styles.currContainer}>
-            {Object.keys(this.state.gridRates).map((key, index) => {
-              console.log(key);
-              return index <= 3 ? (
-                <TouchableOpacity
-                  activeOpacity={0.5}
-                  style={styles.currTextBox}
-                  onPress={() => {
-                    this.setState({ [`${activeCurrency}`]: key, convert: false });
-                  }}
-                >
-                  <Text style={styles.currText}>{key.toUpperCase()}</Text>
-                </TouchableOpacity>
-              ) : (
-                <TouchableOpacity
-                  activeOpacity={0.5}
-                  style={styles.currTextBox}
-                  onPress={() => {
-                    this.setState({ [`${activeCurrency}`]: key, convert: false }, () => {
-                      // this.getRates();
-                    });
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.currText,
-                      {
-                        color: 'white'
-                      }
-                    ]}
-                  >
-                    {key.toUpperCase()}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </ScrollView>
+          <Icon name="magnify" size={22} color="black" />
+          <TextInput
+            maxLength={50}
+            placeholder="Search Currencies"
+            underlineColorAndroid="rgba(255,255,255, 0.0)"
+            style={styles.textInput}
+            onChangeText={value => this.onChangeS(value)}
+            onSubmitEditing={() => {
+              this.setState({ gridRates: this.state.gridRates2 }, () => {
+                this.searchCurrencies();
+              });
+            }}
+          />
+        </View>
         <View style={styles.dateBox}>
           <Text style={styles.dateText}>
-            Date: {this.state.date} | {this.state.time} UTC
+            Date: {this.state.date} | {this.state.time} GMT
           </Text>
         </View>
       </View>
